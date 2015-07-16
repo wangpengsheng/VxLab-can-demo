@@ -1,0 +1,340 @@
+MODULE Robot-Rapid_Code_Left  
+!  Written by Jacob Jacky Aharon @JJAharon
+!           July 2015
+!  Robots Sync Demo RMIT 
+!             Vxlab
+    
+
+!if running in a simulation, the rapid code needs to be changed (commenting out the gripper parts)
+
+    PERS bool isLinCrossPos := FALSE;
+    PERS bool isLGripperClosed := FALSE;
+    PERS bool isLinReadyPosA := FALSE;  
+        
+    VAR bool flagRun:= TRUE;
+    
+    VAR bool SYNC_CROSS := FALSE;
+    VAR bool SYNC_GRIPPER := FALSE;
+    VAR bool SYNC_READY := FALSE;
+
+    !Reverse
+    PERS bool R_isLinReadyPosA := FALSE;  
+    PERS bool R_isLinCrossPos := FALSE;  
+    PERS bool R_isLGripperOpened := FALSE; 
+        
+    VAR bool R_SYNC_CROSS := FALSE;
+    VAR bool R_SYNC_GRIPPER := FALSE;
+    
+    TASK PERS tooldata tGripper:=[TRUE,[[0,0,0],[1,0,0,0]],[2.6,[5.5,-2,91.8],[1,0,0,0],0.021,0.021,0.015]];
+    CONST robtarget HomePosition:=[[308.757924448,4.957038454,535.585055967],[0.000620501,-0.015436582,0.99988039,0.000730121],[0,0,-1,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+    CONST robtarget ReadyPosition:=[[0.356672713,270.706047035,642.726006592],[0.509443134,-0.506736696,0.492674971,0.490873698],[0,-1,-1,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+    CONST robtarget CrossPosition:=[[0.356672713,340.706047035,642.726006592],[0.509443134,-0.506736696,0.492674971,0.490873698],[0,-1,0,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+    CONST robtarget PrePlacePosition:=[[197.40055643,-315.483255013,400.733154612],[0.00017917,0.479834651,0.877358417,0.000940485],[-1,0,-1,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+    CONST robtarget PlacePosition:=[[197.40055643,-315.483255013,330],[0.00017917,0.479834651,0.877358417,0.000940485],[-1,0,-1,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+    !reverse
+    CONST robtarget PrePickPosition:=[[197.40055643,-315.483255013,400.733154612],[0.00017917,0.479834651,0.877358417,0.000940485],[-1,0,-1,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+    CONST robtarget PickPosition:=[[197.40055643,-315.483255013,330],[0.00017917,0.479834651,0.877358417,0.000940485],[-1,0,-1,0],[9E9,9E9,9E9,9E9,9E9,9E9]];
+    
+        
+    PROC Path_HomePositionA()
+        MoveJ HomePosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+    ENDPROC
+    
+    PROC Path_ReadyPosA()
+        MoveL HomePosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveJ ReadyPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+    ENDPROC
+    
+    PROC Path_CrossPosition()
+        MoveL ReadyPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveL CrossPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+    ENDPROC
+    
+    PROC Path_ReadyPosB()
+        MoveL CrossPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveL ReadyPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+    ENDPROC
+    
+    PROC Path_ReadyPosC()
+        MoveL PickPosition,v200,z100\Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveL PrePickPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveJ ReadyPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+    ENDPROC
+
+    
+    PROC Path_PlacePos()
+        MoveL ReadyPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveJ PrePlacePosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveL PlacePosition,v200,z100\Inpos:=inpos100,tool0\WObj:=wobj0;
+    ENDPROC
+    
+    PROC Path_HomePositionB()
+        MoveL PlacePosition,v200,z100\Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveL PrePlacePosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveJ HomePosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+    ENDPROC
+    
+    PROC Path_HomePositionC()
+        MoveL CrossPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveL ReadyPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveJ HomePosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+    ENDPROC
+    
+    PROC Path_PickPosition()
+        MoveL HomePosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveJ PrePickPosition,v200,z100 \Inpos:=inpos100,tool0\WObj:=wobj0;
+        MoveL PickPosition,v200,z100\Inpos:=inpos100,tool0\WObj:=wobj0;
+    ENDPROC
+
+    PROC GotoHomePos_1()
+        Path_HomePositionA;
+    ENDPROC
+
+    PROC GotoReadyPosA()
+        Path_ReadyPosA;
+    ENDPROC
+    
+    
+    PROC GotoCrossPos()
+        Path_CrossPosition;        
+    ENDPROC
+    
+  
+    
+    PROC GotoReadyPosB()
+        Path_ReadyPosB;
+    ENDPROC
+    
+    PROC GotoReadyPosC()
+        Path_ReadyPosC;
+    ENDPROC
+    
+    PROC GotoReleasePos()
+        Path_PlacePos;
+    ENDPROC
+    
+    PROC GotoHomePos_2()
+        Path_HomePositionB;
+    ENDPROC
+    
+    PROC GotoHomePos_3()
+        Path_HomePositionC;
+    ENDPROC
+    
+    PROC GotoPickPos()
+        Path_PickPosition;
+    ENDPROC
+
+    PROC resetflags()	
+        isLinCrossPos := FALSE;
+        isLGripperClosed := FALSE;
+        isLinReadyPosA := FALSE;  
+            
+        flagRun:= TRUE;  
+        SYNC_CROSS := FALSE;
+        SYNC_GRIPPER := FALSE;
+        SYNC_READY := FALSE;
+        
+        R_isLinReadyPosA := FALSE;  
+        R_isLinCrossPos := FALSE;  
+        R_isLGripperOpened := FALSE; 
+        
+        R_SYNC_CROSS := FALSE;
+        R_SYNC_GRIPPER := FALSE;
+        
+    ENDPROC
+
+    PROC SyncCrossPos()
+        waitUntil(SYNC_CROSS);
+        SYNC_CROSS := FALSE;
+    ENDPROC
+
+    PROC SyncGripper()
+        waitUntil(SYNC_GRIPPER);        
+        SYNC_GRIPPER := FALSE;
+    ENDPROC
+    
+    PROC SyncReadyPos()
+        waitUntil(SYNC_READY);
+        SYNC_READY := FALSE;
+    ENDPROC
+
+    PROC R_SyncCrossPos()
+        waitUntil(R_SYNC_CROSS);
+        R_SYNC_CROSS := FALSE;
+    ENDPROC
+
+    PROC R_SyncGripper()
+        waitUntil(R_SYNC_GRIPPER);        
+        R_SYNC_GRIPPER := FALSE;
+    ENDPROC
+    
+    PROC main()
+        
+        
+        
+        SetupGripper;
+            
+        GotoHomePos_1;
+        
+
+
+        WHILE flagRun DO !LHSC
+        
+            resetflags;
+            ! Cross & Place
+            gripperMove 0;          !gripper open
+            GotoReadyPosA;
+                
+            SyncCrossPos;        !SYNC0-start
+            GotoCrossPos;
+            isLinCrossPos := TRUE;
+                
+            SyncGripper;  
+            GrabAPart;  !   ***Close gripper***
+            WaitTime 1;
+            isLGripperClosed := TRUE;
+                
+            SyncReadyPos;
+            isLinCrossPos := FALSE;
+            GotoReadyPosB; !SYNC0-end
+                
+            GotoReleasePos;  
+            ReleasePart;  !   ***Open gripper***
+            WaitTime 1;
+            isLGripperClosed := FALSE;
+                
+            GotoHomePos_2;
+                
+            ! Pick & Cross
+      
+            gripperMove 0; 
+            GotoPickPos;
+
+            GrabAPart; !   ***Close gripper***
+            R_isLGripperOpened := FALSE;
+            
+            GotoReadyPosC;
+            
+            R_isLinReadyPosA := TRUE;    !SYNC1-start
+            
+            R_SyncCrossPOS;
+            R_isLinReadyPosA := FALSE; 
+            GotoCrossPos;
+            R_isLinCrossPos := TRUE; 
+            
+            R_SyncGripper;
+            ReleasePart; !   ***Open gripper*** 
+            R_isLGripperOpened := TRUE; !SYNC1-end
+            
+            R_isLinCrossPos := FALSE; 
+            GotoHomePos_3;
+            
+
+                
+        ENDWHILE
+    ENDPROC
+
+!Reset the Gripper command 
+PROC gripperReset()
+    SetGO o_rMOD, 0;
+    SetGO o_rPRA, 0;
+    SetGO o_rSPA, 0;
+    SetGO o_rFRA, 0; 
+    reset o_rGLV; 
+    reset O_rAAC; 
+    reset O_rICF; 
+    reset O_rICS; 
+    reset O_rGTO; 
+    reset O_rATR; 
+    reset O_rACT;
+    waitUntil(I_gIMC = 0); 
+ENDPROC
+
+!Activate the Gripper and wait until initialization is over 
+PROC gripperActivate()
+    Set O_rACT; 
+    waitUntil(I_gIMC = 3);
+ENDPROC
+
+!Move the gripper to the specified position !and wait until motion is over
+!posRequest = 0 for fully opened !posRequest = 255 for fully closed 
+PROC gripperMove(num posRequest)
+    !The limits are validated 
+    posRequest:= round(posRequest);
+    IF (posRequest > 255) posRequest:=255;
+    IF (posRequest < 0) posRequest:=0;
+    
+    SetGO O_rPRA, posRequest;
+    Set O_rGTO;
+    
+    !Wait until the position request echo is OK !and the motion is over.
+    waitUntil (I_gPRA = posRequest and I_gSTA > 0);
+ENDPROC
+
+!Operation mode change with the Gripper fully opened !mode = {0:Basic, 1:Pinch, 2:Wide, 3:Scissor}
+PROC gripperChangeMode(num mode)
+   ! IF ((mode <0) or (mode >3)) RaiseToUser ERRCodeGripper; 
+    gripperMove 0;
+    SetGO O_rMOD, mode;
+    !Wait until the mode request echo is OK !and the motion is over. 
+    waitUntil(I_gMOD = mode and I_gIMC = 3);
+ENDPROC
+
+!Change Gripper Speed (0-255) 
+PROC gripperSpeed(num speed)
+    !Validate the limits 
+    speed:= round(speed);
+    If (speed > 255) speed:=255; 
+    If (speed < 0) speed:=0; 
+    SetGO O_rSPA,speed;
+ENDPROC
+
+!Change Gripper Force (0-255) 
+PROC gripperForce(num force)
+    !Validate the limits 
+    force:= round(force);
+    If (speed > 255) force:=255; 
+    If (force < 0) force:=0; 
+    SetGO O_rFRA, force;
+ENDPROC
+
+!Verify if Gripper has an object by verifying if the !motion as stopped before requested position
+!Small objects might not be detectable with this approach 
+FUNC bool gripperHasObject()
+    RETURN ((I_gSTA = 1) OR (I_gSTA = 2)); 
+ENDFUNC
+
+!Check whether gripper fingers are moving or not
+FUNC bool isGripperFingersMoving()
+    RETURN NOT(I_gSTA > 0);
+ENDFUNC
+
+    PROC ReleasePart()
+    	gripperMove 0;          !gripper open
+    Simulation_wait;
+    ENDPROC
+    
+    PROC GrabAPart()
+        gripperMove 74;
+    Simulation_wait;
+    ENDPROC
+
+    PROC SetupGripper()
+    
+  
+   !gripperReset;
+   !gripperActivate;
+    gripperSpeed 255;
+    gripperForce 255; 
+    gripperChangeMode 1;
+    ReleasePart;  !gripper open
+ENDPROC
+
+PROC Simulation_wait()
+!    WaitTime 1;  !Should only be commented on real robots!
+ENDPROC
+
+ENDMODULE
+
+
